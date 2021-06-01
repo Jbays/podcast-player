@@ -1,16 +1,24 @@
 
-import React, {useState} from 'react';
+import React, {
+  useEffect,
+  useState
+} from 'react';
 import {
-  Button,
   Card,
   CardHeader,
   CardContent,
-  LinearProgress,
   Grid,
   Typography,
   makeStyles,
 } from '@material-ui/core';
-import {PlayArrow, Pause, Replay10, Forward10} from '@material-ui/icons';
+import short from '../audio/short.mp3';
+import long from '../audio/long.mp3';
+import { PodcastPlayer } from './PodcastPlayer';
+
+const AUDIO_MAP = {
+  short,
+  long,
+}
 
 const useStyles = makeStyles({
   header: {
@@ -20,11 +28,18 @@ const useStyles = makeStyles({
 
 export const EpisodeSpecific = ({
   name,
+  currEpisode,
 }) => {
+  // console.log('currEpisode',currEpisode);
   const classes = useStyles();
+  const [queuedAudio, setQueuedAudio] = useState(null);
 
-  const [isPaused,setIsPaused] = useState(true);
-
+  useEffect(()=>{
+    if ( currEpisode?.id !== '' ) {
+      setQueuedAudio(new Audio(AUDIO_MAP[currEpisode?.id]))
+    }
+  }, [currEpisode?.id]);
+  
   return (
     <Grid item xs={8}>
       <Card>
@@ -37,26 +52,9 @@ export const EpisodeSpecific = ({
           <Typography variant={'h5'}>{name || '<--- Select Your Episode on Left'}</Typography>
         }/>
         <CardContent>
-          <Button variant='contained'>
-            <Replay10 />
-          </Button>
-          {
-            isPaused ? (
-              <Button onClick={()=>setIsPaused(!isPaused)} variant='contained'>
-                <PlayArrow />
-              </Button>
-            ) : (
-              <Button onClick={()=>setIsPaused(!isPaused)} variant='contained'>
-                <Pause />
-              </Button>    
-            )
-          }
-          <Button variant='contained'>
-            <Forward10 />
-          </Button>
-          <br/>
-          <br/>
-          <LinearProgress variable='determinate' />
+          <PodcastPlayer
+            currEpisode={currEpisode}
+            queuedAudio={queuedAudio}/>
         </CardContent>
       </Card>
     </Grid>

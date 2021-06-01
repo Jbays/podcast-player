@@ -39,6 +39,7 @@ function App() {
           <EpisodeList setCurrEpisode={setCurrEpisode}/>
           <EpisodeSpecific
             name={currEpisode?.name}
+            currEpisode={currEpisode}
             />
         </Grid>
       </Paper>
