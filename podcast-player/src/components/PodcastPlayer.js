@@ -5,19 +5,26 @@ import React, {
 } from 'react';
 import {
   Button,
-  LinearProgress,
-  Grid,
-  // makeStyles,
+  // Grid,
+  makeStyles,
 } from '@material-ui/core';
-import {PlayArrow,
+import {
+  PlayArrow,
   Pause,
-  Replay10, Forward10,
+  Replay10,
+  Forward10,
 } from '@material-ui/icons';
+import {Timeline} from './Timeline';
 
 // const useStyles = makeStyles({
-//   header: {
-//     backgroundColor: '#dbdbdb'
+//   timeline: {
+//     backgroundColor: 'black',
+//     border: '.1em solid black',
 //   },
+//   completed: {
+//     backgroundColor: 'red',
+//     height: '.5em',
+//   }
 // });
 
 let SECOND_TIMER;
@@ -32,6 +39,10 @@ export const PodcastPlayer = ({
   const [currTime, setCurrTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
+  useEffect(()=>{
+    setCurrTime(0);
+  }, [currEpisode?.id])
+
   const startSecondTimer = () => {
     let start = currTime;
     const increment = 1;
@@ -39,6 +50,16 @@ export const PodcastPlayer = ({
       setCurrTime(start+increment)
       start++;
     },1000);
+  }
+
+  const handleSkipBack = () => {
+    queuedAudio.currentTime = queuedAudio.currentTime-10;
+    setCurrTime(Math.round(queuedAudio.currentTime));
+  }
+
+  const handleSkipForward = () => {
+    queuedAudio.currentTime = queuedAudio.currentTime+10;
+    setCurrTime(Math.round(queuedAudio.currentTime));
   }
 
   const handlePlay = () => {
@@ -64,7 +85,6 @@ export const PodcastPlayer = ({
         setCanPlay(true);
       });
       queuedAudio.addEventListener('ended', event => {
-        console.log('weve ended');
         setIsPlaying(false);
       });
     }
@@ -72,7 +92,7 @@ export const PodcastPlayer = ({
 
   return (
     <>
-      <Button variant='contained'>
+      <Button onClick={handleSkipBack} variant='contained'>
         <Replay10 />
       </Button>
       {
@@ -87,17 +107,16 @@ export const PodcastPlayer = ({
           </Button>    
         )
       }
-      <Button variant='contained'>
+      <Button onClick={handleSkipForward} variant='contained'>
         <Forward10 />
       </Button>
       <br/>
       <br/>
-      <Grid direction='row' container justify='space-between'>
-        <Grid item>{currTime}</Grid>
-        <Grid item>{duration}</Grid>
-      </Grid>
-      <br/>
-      <LinearProgress variable='determinate' />
+      <Timeline
+        queuedAudio={queuedAudio}
+        currTime={currTime}
+        setCurrTime={setCurrTime}
+        duration={duration}/>
     </>
   );
 }
