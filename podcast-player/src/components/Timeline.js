@@ -5,30 +5,51 @@ import React, {
 } from 'react';
 import {
   Grid,
-  makeStyles,
+  // makeStyles,
   Slider,
-  Typography,
 } from '@material-ui/core';
 
-const useStyles = makeStyles({
-  timeline: {
-    backgroundColor: 'black',
-    border: '.1em solid black',
-  },
-  completed: {
-    backgroundColor: 'red',
-    height: '.5em',
+// const useStyles = makeStyles({
+//   timeline: {
+//     backgroundColor: 'black',
+//     border: '.1em solid black',
+//   },
+//   completed: {
+//     backgroundColor: 'red',
+//     height: '.5em',
+//   }
+// });
+
+const convertSecondsToMinutes = (seconds) => {
+  if ( seconds === 0 ) return '0:00';
+  let secondsCopy = seconds;
+  let convertedMin = 0;
+
+  while ( secondsCopy > 60 ) {
+    convertedMin++;
+    secondsCopy = secondsCopy - 60;
   }
-});
+
+  if ( secondsCopy === 60 ) {
+    convertedMin++;
+    secondsCopy = 0;
+  }
+
+  if (secondsCopy <= 9 ) {
+    return `${convertedMin}:0${secondsCopy}`
+  }
+
+  return `${convertedMin}:${secondsCopy}`
+}
 
 const ContinuousSlider = ({
   percentComplete,
   currTime,
   duration,
   queuedAudio,
-  setCurrTime,
+  handleTimelineClick,
 }) => {
-  const classes = useStyles();
+  // const classes = useStyles();
   const [enabled,setEnabled] = useState(false);
   const [percent,setPercent] = useState(percentComplete);
 
@@ -42,30 +63,17 @@ const ContinuousSlider = ({
     }
   },[queuedAudio])
   
-  const handleChange = (event, newValue) => {
-    const skipToHere = Math.round((newValue/100)*duration);
-    queuedAudio.pause();
-    console.log('before queuedAudio.currentTime',queuedAudio.currentTime)
-    console.log('newValue/100',newValue/100)
-    console.log('skipToHere',skipToHere)
-    queuedAudio.currentTime = skipToHere;
-    // queuedAudio.play();
-    console.log('after queuedAudio.currentTime',queuedAudio.currentTime)
-    setPercent(newValue);
-    setCurrTime(newValue);
-  };
-
   return (
     <div>
       <Grid container spacing={2}>
         <Grid item>
-          {currTime}
+          {convertSecondsToMinutes(currTime)}
         </Grid>
         <Grid item xs>
-          <Slider disabled={!enabled} value={percent} onChange={handleChange} aria-labelledby="continuous-slider" />
+          <Slider disabled={!enabled} value={percent} onChange={handleTimelineClick} aria-labelledby="continuous-slider" />
         </Grid>
         <Grid item>
-          {duration}
+          {convertSecondsToMinutes(duration)}
         </Grid>
       </Grid>
     </div>
@@ -76,7 +84,7 @@ export const Timeline = ({
   currTime,
   duration,
   queuedAudio,
-  setCurrTime,
+  handleTimelineClick,
 }) => {
   const [percentComplete,setPercentComplete] = useState(0);
 
@@ -87,13 +95,12 @@ export const Timeline = ({
 
   return (
     <>
-      <div>{percentComplete}%</div>
       <ContinuousSlider
+        handleTimelineClick={handleTimelineClick}
         percentComplete={percentComplete}
         currTime={currTime}
         duration={duration}
         queuedAudio={queuedAudio}
-        setCurrTime={setCurrTime}
       />
     </>
   );

@@ -5,7 +5,8 @@ import React, {
 } from 'react';
 import {
   Button,
-  // Grid,
+  ButtonGroup,
+  Grid,
   makeStyles,
 } from '@material-ui/core';
 import {
@@ -16,16 +17,14 @@ import {
 } from '@material-ui/icons';
 import {Timeline} from './Timeline';
 
-// const useStyles = makeStyles({
-//   timeline: {
-//     backgroundColor: 'black',
-//     border: '.1em solid black',
-//   },
-//   completed: {
-//     backgroundColor: 'red',
-//     height: '.5em',
-//   }
-// });
+const useStyles = makeStyles({
+  buttonContainer: {
+    paddingBottom: '1em',
+  },
+  bigButton: {
+    padding: '2em',
+  },
+});
 
 let SECOND_TIMER;
 
@@ -33,7 +32,7 @@ export const PodcastPlayer = ({
   queuedAudio,
   currEpisode,
 }) => {
-  // const classes = useStyles();
+  const classes = useStyles();
   const [isPlaying, setIsPlaying] = useState(false);
   const [canPlay, setCanPlay] = useState(false);
   const [currTime, setCurrTime] = useState(0);
@@ -41,31 +40,71 @@ export const PodcastPlayer = ({
 
   useEffect(()=>{
     setCurrTime(0);
-  }, [currEpisode?.id])
+    queuedAudio?.pause();
+    setIsPlaying(false);
+    clearInterval(SECOND_TIMER);
+  }, [queuedAudio, currEpisode?.id])
 
-  const startSecondTimer = () => {
-    let start = currTime;
-    const increment = 1;
+  const startSecondTimer = (startTime=0) => {
+    let increment = 1;
     SECOND_TIMER = setInterval(()=>{
-      setCurrTime(start+increment)
-      start++;
+      setCurrTime(startTime+increment);
+      increment++;
     },1000);
   }
 
   const handleSkipBack = () => {
-    queuedAudio.currentTime = queuedAudio.currentTime-10;
-    setCurrTime(Math.round(queuedAudio.currentTime));
-  }
+    queuedAudio.pause();
+    clearInterval(SECOND_TIMER);
+    const newTimestamp = Math.round(queuedAudio.currentTime-10);
+    // if user skips back prior to the beginning of the audio
+    if ( newTimestamp <= 0 ) {
+      queuedAudio.currentTime = 0;
+      setCurrTime(0);
+      startSecondTimer(0);
+    } else {
+      queuedAudio.currentTime = newTimestamp;
+      setCurrTime(newTimestamp);
+      startSecondTimer(newTimestamp);
+    }
+    queuedAudio.play();
+    setIsPlaying(true);
+  };
 
   const handleSkipForward = () => {
-    queuedAudio.currentTime = queuedAudio.currentTime+10;
-    setCurrTime(Math.round(queuedAudio.currentTime));
+    queuedAudio.pause();
+    clearInterval(SECOND_TIMER);
+    const newTimestamp = Math.round(queuedAudio.currentTime+10);
+    // if user skips forward past the total length of the audio
+    if ( newTimestamp >= duration ) {
+      queuedAudio.currentTime = duration;
+      setCurrTime(duration);
+    } else {
+      queuedAudio.currentTime = newTimestamp;
+      setCurrTime(newTimestamp);
+      startSecondTimer(newTimestamp);
+      queuedAudio.play();
+      setIsPlaying(true);
+    }
   }
 
-  const handlePlay = () => {
+  const handleTimelineClick = (event, value) => {
+    queuedAudio.pause();
+    clearInterval(SECOND_TIMER);
+    const newTimestamp = Math.round((value/100)*duration);
+    queuedAudio.currentTime = newTimestamp;
+    setCurrTime(newTimestamp);
+    
+    if ( isPlaying ){
+      startSecondTimer(newTimestamp);
+      queuedAudio.play();
+    }
+  }
+
+  const handlePlay = (currentTime) => {
     queuedAudio.play().then((res)=>{
       setIsPlaying(true);
-      startSecondTimer();
+      startSecondTimer(currentTime);
     })
     .catch((err)=>{
       console.log('this is your error', err);
@@ -73,7 +112,7 @@ export const PodcastPlayer = ({
   };
 
   const handlePause = () => {
-    queuedAudio.pause();
+    queuedAudio?.pause();
     setIsPlaying(false);
     clearInterval(SECOND_TIMER);
   };
@@ -81,7 +120,8 @@ export const PodcastPlayer = ({
   useEffect(()=>{
     if ( queuedAudio !== null ) {
       queuedAudio.addEventListener('canplaythrough', event => {
-        setDuration(Math.round(queuedAudio?.duration));
+        const duration = Math.round(queuedAudio?.duration);
+        setDuration(duration);
         setCanPlay(true);
       });
       queuedAudio.addEventListener('ended', event => {
@@ -92,30 +132,32 @@ export const PodcastPlayer = ({
 
   return (
     <>
-      <Button onClick={handleSkipBack} variant='contained'>
-        <Replay10 />
-      </Button>
-      {
-        isPlaying ? (
-          <Button onClick={handlePause} variant='contained'>
-            <Pause />
+      <Grid container direction='row' justify='center'>
+        <ButtonGroup className={classes.buttonContainer}>
+          <Button onClick={handleSkipBack} variant='contained'>
+            <Replay10 />
           </Button>
-        ) :
-        (
-          <Button onClick={handlePlay} variant='contained' disabled={!canPlay}>
-            <PlayArrow />
-          </Button>    
-        )
-      }
-      <Button onClick={handleSkipForward} variant='contained'>
-        <Forward10 />
-      </Button>
-      <br/>
-      <br/>
+          {
+            isPlaying ? (
+              <Button className={classes.bigButton} onClick={handlePause} variant='contained'>
+                <Pause />
+              </Button>
+            ) :
+            (
+              <Button className={classes.bigButton} onClick={()=>handlePlay(currTime)} variant='contained' disabled={!canPlay}>
+                <PlayArrow />
+              </Button>    
+            )
+          }
+          <Button onClick={handleSkipForward} variant='contained'>
+            <Forward10 />
+          </Button>
+        </ButtonGroup>
+      </Grid>
       <Timeline
+        handleTimelineClick={handleTimelineClick}
         queuedAudio={queuedAudio}
         currTime={currTime}
-        setCurrTime={setCurrTime}
         duration={duration}/>
     </>
   );

@@ -30,7 +30,6 @@ export const EpisodeSpecific = ({
   name,
   currEpisode,
 }) => {
-  // console.log('currEpisode',currEpisode);
   const classes = useStyles();
   const [queuedAudio, setQueuedAudio] = useState(null);
 
