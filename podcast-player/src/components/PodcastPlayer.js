@@ -40,27 +40,38 @@ export const PodcastPlayer = ({
   const [showAd,setShowAd] = useState(false);
   const [whichAd,setWhichAd] = useState(0);
   const [nextAd, setNextAd] = useState(currEpisode?.markers[whichAd]);
-  const totalAds = currEpisode?.markers.length
 
-  console.log('currEpisode?.markers',currEpisode?.markers);
-
-  // trigger ad and prep next ad
-  const triggerAd = () => {
-    setShowAd(true);
-    triggerAdTimer(nextAd?.duration);
-    const nextAdIndex = whichAd+1;
-    if ( nextAdIndex < totalAds ) {
-      setWhichAd(nextAdIndex);
-      setNextAd(currEpisode?.markers[nextAdIndex]);
+  // stops the currTime from going beyond the duration.
+  // will pause the player
+  useEffect(()=>{
+    if ( currTime > duration ){
+      setCurrTime(0);
+      queuedAudio.pause();
+      setIsPlaying(false);
+      clearInterval(SECOND_TIMER);
+      setNextAd(currEpisode?.markers[0]);
     }
-  }
+  },[currTime, duration])
 
-  const triggerAdTimer = (adLength) => {
-    setTimeout(()=>{
-      setShowAd(false);
-    }, adLength*1000);
-  }
-
+  // only show ad if BOTH podcast player is playing
+  // AND currTime equals when start of next Ad
+  useEffect(()=>{
+    if (isPlaying){
+      if ( currTime === nextAd?.start){
+        setShowAd(true);
+      }
+      if ( currTime === (nextAd?.start + nextAd?.duration) ){
+        setShowAd(false);
+        const nextAdIndex = whichAd+1;
+        setWhichAd(nextAdIndex);
+        const thisIsNextAd = currEpisode?.markers[nextAdIndex];
+        setNextAd(thisIsNextAd);
+        if ( thisIsNextAd?.start === currTime ) {
+          setShowAd(true);
+        }
+      }
+    }
+  },[isPlaying,currTime]);
 
   // if audio in queue OR current episode id changes, reset settings
   useEffect(()=>{
@@ -68,7 +79,7 @@ export const PodcastPlayer = ({
     queuedAudio?.pause();
     setIsPlaying(false);
     clearInterval(SECOND_TIMER);
-    setNextAd(currEpisode?.markers[0])
+    setNextAd(currEpisode?.markers[0]);
   }, [queuedAudio, currEpisode?.id]);
 
   const startSecondTimer = (startTime=0) => {
@@ -88,6 +99,7 @@ export const PodcastPlayer = ({
       queuedAudio.currentTime = 0;
       setCurrTime(0);
       startSecondTimer(0);
+      setNextAd(currEpisode?.markers[0]);
     } else {
       queuedAudio.currentTime = newTimestamp;
       setCurrTime(newTimestamp);
@@ -157,12 +169,26 @@ export const PodcastPlayer = ({
   },[queuedAudio]);
 
   const handleAdRender = (adObj) => {
-    console.log('adObj', adObj);
-    if ( adObj?.type === 'ad' ) {
-      return adObj?.content;
-    }
-    if (adObj?.type === 'image') {
-      return 'should be showing an image'
+    const adType = adObj?.type;
+    if ( adType === 'ad' ) {
+      return (
+        <a target='_blank' href={adObj?.link}>
+          {adObj?.content}
+        </a>
+      );
+    } else if (adType === 'text' ) {
+      return (
+        <div>{adObj?.content}</div>
+      )
+    } else if (adType === 'image') {
+      return (
+        <div>
+          <img
+            style={{width: '5em'}}
+            src={`../${adObj.content}`}
+            alt='slices of crispy delicious bacon'/>
+        </div>
+      )
     }
   }
 
@@ -194,12 +220,10 @@ export const PodcastPlayer = ({
         }
       </Grid>
       <Timeline
-        triggerAd={triggerAd}
-        nextAd={nextAd}
-        handleTimelineClick={handleTimelineClick}
-        queuedAudio={queuedAudio}
         currTime={currTime}
-        duration={duration}/>
+        duration={duration}
+        handleTimelineClick={handleTimelineClick}
+        queuedAudio={queuedAudio}/>
     </>
   );
 }

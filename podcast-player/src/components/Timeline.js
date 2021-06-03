@@ -90,25 +90,16 @@ const ContinuousSlider = ({
 export const Timeline = ({
   currTime,
   duration,
-  queuedAudio,
   handleTimelineClick,
-  triggerAd,
-  nextAd
+  queuedAudio,
 }) => {
   const [percentComplete,setPercentComplete] = useState(0);
-  // const [adTime,setAdTime] = useState(nextAdDuration*1000);
 
-  console.log('nextAd', nextAd);
-
+  // sets the slider's pointer location 
   useEffect(()=>{
     const pointerLocation = Math.round(100*(currTime/duration)) || 0;
-    console.log('this is pointer location', pointerLocation);
     setPercentComplete(pointerLocation);
-    if ( currTime === nextAd?.start ){
-      triggerAd();
-    }
-
-  },[currTime, duration, nextAd, triggerAd]);
+  },[currTime, duration]);
 
   return (
     <ContinuousSlider
