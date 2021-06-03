@@ -50,18 +50,21 @@ const ContinuousSlider = ({
   handleTimelineClick,
 }) => {
   // const classes = useStyles();
-  const [enabled,setEnabled] = useState(false);
+  const [isEnabled,setEnabled] = useState(false);
   const [percent,setPercent] = useState(percentComplete);
 
+  // keeps the slider updating
   useEffect(()=>{
     setPercent(percentComplete);
   },[percentComplete]);
 
+  // slider is disabled unless audio is loaded / ready
   useEffect(()=>{
     if (queuedAudio){
       setEnabled(true);
     }
   },[queuedAudio])
+
   
   return (
     <div>
@@ -70,7 +73,11 @@ const ContinuousSlider = ({
           {convertSecondsToMinutes(currTime)}
         </Grid>
         <Grid item xs>
-          <Slider disabled={!enabled} value={percent} onChange={handleTimelineClick} aria-labelledby="continuous-slider" />
+          <Slider
+            disabled={!isEnabled}
+            value={percent}
+            onChange={handleTimelineClick}
+            />
         </Grid>
         <Grid item>
           {convertSecondsToMinutes(duration)}
@@ -85,23 +92,31 @@ export const Timeline = ({
   duration,
   queuedAudio,
   handleTimelineClick,
+  triggerAd,
+  nextAd
 }) => {
   const [percentComplete,setPercentComplete] = useState(0);
+  // const [adTime,setAdTime] = useState(nextAdDuration*1000);
+
+  console.log('nextAd', nextAd);
 
   useEffect(()=>{
-    const value = Math.round(100*(currTime/duration)) || 0;
-    setPercentComplete(value);
-  },[currTime, duration]);
+    const pointerLocation = Math.round(100*(currTime/duration)) || 0;
+    console.log('this is pointer location', pointerLocation);
+    setPercentComplete(pointerLocation);
+    if ( currTime === nextAd?.start ){
+      triggerAd();
+    }
+
+  },[currTime, duration, nextAd, triggerAd]);
 
   return (
-    <>
-      <ContinuousSlider
-        handleTimelineClick={handleTimelineClick}
-        percentComplete={percentComplete}
-        currTime={currTime}
-        duration={duration}
-        queuedAudio={queuedAudio}
-      />
-    </>
+    <ContinuousSlider
+      handleTimelineClick={handleTimelineClick}
+      percentComplete={percentComplete}
+      currTime={currTime}
+      duration={duration}
+      queuedAudio={queuedAudio}
+    />
   );
 }

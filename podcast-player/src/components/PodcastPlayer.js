@@ -37,13 +37,39 @@ export const PodcastPlayer = ({
   const [canPlay, setCanPlay] = useState(false);
   const [currTime, setCurrTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showAd,setShowAd] = useState(false);
+  const [whichAd,setWhichAd] = useState(0);
+  const [nextAd, setNextAd] = useState(currEpisode?.markers[whichAd]);
+  const totalAds = currEpisode?.markers.length
 
+  console.log('currEpisode?.markers',currEpisode?.markers);
+
+  // trigger ad and prep next ad
+  const triggerAd = () => {
+    setShowAd(true);
+    triggerAdTimer(nextAd?.duration);
+    const nextAdIndex = whichAd+1;
+    if ( nextAdIndex < totalAds ) {
+      setWhichAd(nextAdIndex);
+      setNextAd(currEpisode?.markers[nextAdIndex]);
+    }
+  }
+
+  const triggerAdTimer = (adLength) => {
+    setTimeout(()=>{
+      setShowAd(false);
+    }, adLength*1000);
+  }
+
+
+  // if audio in queue OR current episode id changes, reset settings
   useEffect(()=>{
     setCurrTime(0);
     queuedAudio?.pause();
     setIsPlaying(false);
     clearInterval(SECOND_TIMER);
-  }, [queuedAudio, currEpisode?.id])
+    setNextAd(currEpisode?.markers[0])
+  }, [queuedAudio, currEpisode?.id]);
 
   const startSecondTimer = (startTime=0) => {
     let increment = 1;
@@ -130,9 +156,19 @@ export const PodcastPlayer = ({
     }
   },[queuedAudio]);
 
+  const handleAdRender = (adObj) => {
+    console.log('adObj', adObj);
+    if ( adObj?.type === 'ad' ) {
+      return adObj?.content;
+    }
+    if (adObj?.type === 'image') {
+      return 'should be showing an image'
+    }
+  }
+
   return (
     <>
-      <Grid container direction='row' justify='center'>
+      <Grid container direction='row' justify='space-between'>
         <ButtonGroup className={classes.buttonContainer}>
           <Button onClick={handleSkipBack} variant='contained'>
             <Replay10 />
@@ -153,8 +189,13 @@ export const PodcastPlayer = ({
             <Forward10 />
           </Button>
         </ButtonGroup>
+        {
+          showAd ? handleAdRender(nextAd) : null
+        }
       </Grid>
       <Timeline
+        triggerAd={triggerAd}
+        nextAd={nextAd}
         handleTimelineClick={handleTimelineClick}
         queuedAudio={queuedAudio}
         currTime={currTime}
