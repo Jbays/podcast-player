@@ -181,6 +181,7 @@ export const PodcastPlayer = ({
         <div>{adObj?.content}</div>
       )
     } else if (adType === 'image') {
+      console.log('process.env.NODE_ENV',process.env.NODE_ENV);
       return (
         <div>
           <img
