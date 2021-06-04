@@ -24,6 +24,9 @@ const useStyles = makeStyles({
   bigButton: {
     padding: '2em',
   },
+  imageStyle: {
+    width: '5em',
+  },
 });
 
 let SECOND_TIMER;
@@ -181,15 +184,25 @@ export const PodcastPlayer = ({
         <div>{adObj?.content}</div>
       )
     } else if (adType === 'image') {
-      console.log('process.env.NODE_ENV',process.env.NODE_ENV);
-      return (
-        <div>
-          <img
-            style={{width: '5em'}}
-            src={`../${adObj.content}`}
-            alt='slices of crispy delicious bacon'/>
-        </div>
-      )
+      if ( process.env.NODE_ENV === 'development' ) {
+        return (
+          <div>
+            <img
+              className={classes.imageStyle}
+              src={`../${adObj.content}`}
+              alt='slices of crispy delicious bacon'/>
+          </div>
+        )
+      } else {
+        return (
+          <div>
+            <img
+              className={classes.imageStyle}
+              src={`${adObj.content}`}
+              alt='slices of crispy delicious bacon'/>
+          </div>
+        )
+      }
     }
   }
 
