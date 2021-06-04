@@ -222,8 +222,7 @@ export const PodcastPlayer = ({
           <div>
             <img
               className={classes.imageStyle}
-              src={`../${adObj.content}`}
-              alt='slices of crispy delicious bacon'/>
+              src={`../${adObj.content}`}/>
           </div>
         )
       } else {
@@ -231,8 +230,7 @@ export const PodcastPlayer = ({
           <div>
             <img
               className={classes.imageStyle}
-              src={`./${adObj.content}`}
-              alt='slices of crispy delicious bacon'/>
+              src={`${adObj.content}`}/>
           </div>
         )
       }
