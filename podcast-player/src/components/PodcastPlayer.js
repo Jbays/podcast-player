@@ -43,6 +43,20 @@ export const PodcastPlayer = ({
   const [showAd,setShowAd] = useState(false);
   const [whichAd,setWhichAd] = useState(0);
   const [nextAd, setNextAd] = useState(currEpisode?.markers[whichAd]);
+  const [adRanges, setAdRanges] = useState([]);
+  const [skipAds, setSkipAds] = useState(false);
+
+  // create an array of tuples (numbers)
+  // where first number is start timestamp and second number is end timestamp
+  // and that tuple's index relates to that specific ad.
+  useEffect(()=>{
+    if ( currEpisode?.markers.length > 0 ) {
+      const adRangesArray = currEpisode.markers.map((marker)=>{
+        return [marker.start,marker.start+marker.duration]
+      });
+      setAdRanges(adRangesArray);
+    };
+  },[currEpisode]);
 
   // stops the currTime from going beyond the duration.
   // will pause the player
@@ -54,7 +68,8 @@ export const PodcastPlayer = ({
       clearInterval(SECOND_TIMER);
       setNextAd(currEpisode?.markers[0]);
     }
-  },[currTime, duration])
+  },[currTime, duration]);
+
 
   // only show ad if BOTH podcast player is playing
   // AND currTime equals when start of next Ad
@@ -84,6 +99,19 @@ export const PodcastPlayer = ({
     clearInterval(SECOND_TIMER);
     setNextAd(currEpisode?.markers[0]);
   }, [queuedAudio, currEpisode?.id]);
+
+  const handlePotentialAdSkip = (time,timestampArr) => {
+    for ( let i = 0; i < timestampArr.length; i++ ) {
+      const startPoint = timestampArr[i][0];
+      const endPoint = timestampArr[i][1];
+      if ( time >= startPoint && time <= endPoint ) {
+        console.log('you tried skipping this ad!:', i);
+        setWhichAd(i);
+        setShowAd(true);
+        return;
+      };
+    }
+  }
 
   const startSecondTimer = (startTime=0) => {
     let increment = 1;
@@ -116,6 +144,11 @@ export const PodcastPlayer = ({
     queuedAudio.pause();
     clearInterval(SECOND_TIMER);
     const newTimestamp = Math.round(queuedAudio.currentTime+10);
+
+    if ( !skipAds ) {
+      handlePotentialAdSkip(newTimestamp,adRanges);
+      setSkipAds(true);
+    }
     // if user skips forward past the total length of the audio
     if ( newTimestamp >= duration ) {
       queuedAudio.currentTime = duration;
@@ -175,7 +208,7 @@ export const PodcastPlayer = ({
     const adType = adObj?.type;
     if ( adType === 'ad' ) {
       return (
-        <a target='_blank' href={adObj?.link}>
+        <a rel='noreferrer' target='_blank' href={adObj?.link}>
           {adObj?.content}
         </a>
       );
@@ -198,7 +231,7 @@ export const PodcastPlayer = ({
           <div>
             <img
               className={classes.imageStyle}
-              src={`${adObj.content}`}
+              src={`./${adObj.content}`}
               alt='slices of crispy delicious bacon'/>
           </div>
         )
